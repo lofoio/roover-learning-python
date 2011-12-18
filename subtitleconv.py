@@ -74,11 +74,12 @@ class subtitleconv(object):
         sys.exit("file format is not supported.".title())
 
     def __SRTparser(self):
-        """wraper for *.srt"""
+        """parser for *.srt"""
         midlist = []
         sublist = []
         contactline = ""
-        timepattern = re.compile(r"^(.+\d{,3}) --> (\d{2}:\d{2}:\d{2}.\d{3})")
+        timepattern = \
+            re.compile(r"^(.+\d{,3}) --> (\d{2}:\d{2}:\d{2}.\d{3})(.+)?")
         for line in self.cleansrc:
             if not timepattern.search(line):
                 sublist.append(line)
@@ -90,32 +91,24 @@ class subtitleconv(object):
             contactline = line
         contactline += "".join(subresv)
         midlist.append(contactline)
-        self.outlist = midlist
-
-        #     try:
-        #         temp = timepattern.search(line).groups()
-        #     except AttributeError:
-        #         sublist.append(line)
-        #         subresv = sublist
-        #         continue
-
-        #     contactline = "[" + temp[0] + "]" +\
-        #                   "".join(sublist[:-1]) +\
-        #                   "[" + temp[1] + "]"
-        #     sublist = []
-        #     midlist.append(contactline)
-        #     contactline = line
-        # contactline = "[" + temp[0] + "]" +\
-        #               "".join(subresv) +\
-        #               "[" + temp[1] + "]"
-        # midlist.append(contactline)
-        # self.outlist = midlist
+        midlist = midlist[1:]
+        oldtime = ""
+        oldte = 20000.0
+        for line in midlist:
+            temp = timepattern.search(line).groups()
+            nline = "[" + temp[0] + "]" + temp[2]
+            if oldte + 1 < hmstos(temp[0]):
+                self.outlist.append(oldtime)
+            self.outlist.append(nline)
+            oldte = hmstos(temp[1])
+            oldtime = "[" + temp[1] + "]"
+        self.outlist.append(oldtime)
 
     def __SUBparser(self):
         """parser for *.sub"""
         print "Sub Format Detected."
         vfps = 23.98
-        contactline = "{0}{%d}" % (int(vfps) * 2)
+        contactline = ""
         midlist = []
         timepattern = re.compile(r'^\{(\d+)\}\{(\d+)\}')
         for line in self.cleansrc:
@@ -125,6 +118,7 @@ class subtitleconv(object):
             midlist.append(contactline)
             contactline = line
         midlist.append(contactline)
+        midlist = midlist[1:]
 
         oldtime = ""
         oldte = "2000"
@@ -157,10 +151,17 @@ class subtitleconv(object):
 
 
 def GetInHMS(seconds):
+    "datetime.timedelta"
     m, s = divmod(seconds, 60)
     h, m = divmod(int(m), 60)
     return "%02d:%02d:%05.2f" % (h, m, s)
-#datetime.timedelta
+
+
+def hmstos(hms):
+    "datetime.timedelta"
+    temp = hms.replace(",", ".").split(":")
+    secs = int(temp[0]) * 3600 + int(temp[1]) * 60 + float(temp[2])
+    return secs
 
 
 def usage():
@@ -174,3 +175,22 @@ if __name__ == "__main__":
         usage()
         sys.exit(2)
     d = subtitleconv(argv)
+
+        #     try:
+        #         temp = timepattern.search(line).groups()
+        #     except AttributeError:
+        #         sublist.append(line)
+        #         subresv = sublist
+        #         continue
+
+        #     contactline = "[" + temp[0] + "]" +\
+        #                   "".join(sublist[:-1]) +\
+        #                   "[" + temp[1] + "]"
+        #     sublist = []
+        #     midlist.append(contactline)
+        #     contactline = line
+        # contactline = "[" + temp[0] + "]" +\
+        #               "".join(subresv) +\
+        #               "[" + temp[1] + "]"
+        # midlist.append(contactline)
+        # self.outlist = midlist
