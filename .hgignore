@@ -1,0 +1,16 @@
+syntax: glob
+*.orig
+*.rej
+*~
+*.o
+*.obj
+*.bak
+*.pyc
+*.sub
+*.srt
+*.lrc
+tests/*.err
+tests/*.txt
+
+syntax: regexp
+.*\#.*\#$
